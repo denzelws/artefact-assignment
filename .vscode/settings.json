@@ -1,0 +1,43 @@
+{
+  // Theme and typography (workspace standard, plan.md section 7)
+  "editor.fontFamily": "JetBrains Mono",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 12,
+  // Organization: 120-column ruler
+  "editor.rulers": [
+    120
+  ],
+  // Formatting and linting: Ruff format on save + organize imports (Python repo,
+  // so Ruff replaces the Prettier/ESLint pair from the generic standard)
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "ruff.lineLength": 120,
+  // Interpreter: project-local virtual environment (created in Phase 0)
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  // Clean exclusions of build/cache folders
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.expo": true,
+    "**/dist": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "**/.venv": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.expo/**": true,
+    "**/dist/**": true,
+    "**/__pycache__/**": true,
+    "**/.pytest_cache/**": true,
+    "**/.ruff_cache/**": true,
+    "**/.venv/**": true
+  }
+}
