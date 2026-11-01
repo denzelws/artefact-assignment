@@ -119,6 +119,8 @@ class OpenAIClient:
             raise LLMError(f"Cannot reach OpenAI endpoint: {exc.reason}") from exc
         except (TimeoutError, json.JSONDecodeError) as exc:
             raise LLMError(f"Invalid response from OpenAI: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 - transport hiccups (dropped conn, reset)
+            raise LLMError(f"OpenAI connection failed: {exc}") from exc
 
         try:
             message = data["choices"][0]["message"]

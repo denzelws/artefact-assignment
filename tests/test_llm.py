@@ -1,5 +1,8 @@
 """Protocol and factory checks for the LLM layer (no network)."""
 
+import http.client
+from unittest.mock import patch
+
 import pytest
 
 from emporio.config import Settings
@@ -44,3 +47,10 @@ def test_message_round_trip_shape() -> None:
     assert message.role == "user"
     assert message.content == "Olá!"
     assert message.tool_calls == []
+
+
+def test_dropped_connection_becomes_llm_error() -> None:
+    client = OllamaClient()
+    with patch("urllib.request.urlopen", side_effect=http.client.RemoteDisconnected("boom")):
+        with pytest.raises(LLMError, match="Ollama connection failed"):
+            client.chat([ChatMessage(role="user", content="Oi")])

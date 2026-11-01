@@ -92,6 +92,8 @@ class OllamaClient:
             raise LLMError(f"Cannot reach Ollama at {self.host}: {exc.reason}") from exc
         except (TimeoutError, json.JSONDecodeError) as exc:
             raise LLMError(f"Invalid response from Ollama: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 - transport hiccups (dropped conn, reset)
+            raise LLMError(f"Ollama connection failed: {exc}") from exc
 
         message = data.get("message", {}) if isinstance(data, dict) else {}
         return ChatResponse(
