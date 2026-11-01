@@ -7,7 +7,7 @@ payments), and out-of-scope redirection.
 
 The project demonstrates grounding (the model never recalls facts — it reads tool
 output), Portuguese text normalization, deterministic pricing rules in code, typed
-function calling over two LLM providers, and-warning clean automated tests with 100%
+function calling over two LLM providers, and warning-clean automated tests with 100%
 coverage.
 
 Repository: https://github.com/denzelws/artefact-assignment
