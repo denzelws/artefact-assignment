@@ -74,3 +74,43 @@
 - English PDF named `<Full Name> - AI Engineer – Full-Stack para Aplicações com IA Generativa.pdf`
   with summary, decisions, limitations, repo link, run instructions.
 - Submit via Google Form; reply to Tatielle's email with the same link + PDF.
+
+## 10. UX edge-case audit (added after Phase 4, Oct 31 2026)
+- How we got here: after building the data layer, we re-read the manual against the
+  implementation and asked "what can a real customer type that breaks the happy path?".
+  A 15-query torture test (`DEVOLUÇÃO!!!`, `frete gratis p campo grande`,
+  `qero divolber um produt com deffeito`) proved the policy search holds for realistic
+  messiness (accents/case/punctuation/stopwords) and degrades to the section index on
+  garbage. Total garbage never resolves — that is by design: the LLM layer (Phase 6)
+  maps messy text to clean tool arguments before search ever sees it. The cases below
+  are the ones normalization alone cannot solve; each names where it lands.
+- Order-status UX (tool semantics, Phase 5):
+  - No tracking yet (pending/confirmed have NULL code/ETA) — tool returns an explicit
+    "not shipped" state with what happens next, so the model never invents a code.
+  - Cancelled order — empathy + replacement offer, not just the status word; response
+    includes all items (orders 15/20 have 2) and the customer name (JOIN to customers
+    enables "Olá, Lucas…" instead of a cold dump).
+- Product UX (structural, Phase 5 tools + Phase 6 prompt):
+  - Out-of-stock MUST suggest same-category in-stock alternatives (manual 7.3). Tool
+    results carry `status` + `stock_quantity` so the agent can branch.
+  - Three distinct "unavailable" messages: out-of-stock (temporarily indisponível +
+    alternatives), discontinued (fora do catálogo + successors), coming_soon (ainda não
+    lançado — never "sem estoque").
+  - Accessories (strings, picks, cables, pedals, amps, cases) are a redirect path,
+    distinguishable from "instrumento esgotado" — the prompt carries the literal list.
+- Money UX (model arithmetic + rules, Phase 6 prompt; one tool flag, Phase 5):
+  - Installment minima enforced before offering: 12x needs R$100/parcela, so a R$500
+    item cannot go 12x. Prompt carries the 3x/6x/12x table.
+  - Promotion results flag `pix_eligible` — the 5% PIX never applies on promo prices,
+    and a boolean keeps the model from computing the most expensive mistake.
+  - Freight: metro rule quoted exactly (grátis > R$500, else R$35); out-of-area gets
+    method + range only, never a fabricated number.
+- Clock confusion (Phase 6 prompt): 7 (online regret) vs 30 (defect) vs 90 (legal
+  warranty) days — the model must qualify the situation (online? defect? how long ago?)
+  before quoting a number; search ranking already verified for these sections.
+- Escalation (prompt scripts, no tools by design): complaints -> empathy + 24h callback
+  promise; LGPD deletion requests -> acknowledge + route. Neither is tool-solvable, so
+  the prompt must prevent the model from improvising a resolution.
+- Process note: pytest suite started early (Phase 4.5, `tests/` for llm/data/policies,
+  29 tests) instead of waiting for Phase 8 — scratch `/tmp` smoke scripts graduate into
+  `tests/test_*.py` from now on; Phase 8 extends the suite (tools, agent loop).
