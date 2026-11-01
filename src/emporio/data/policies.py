@@ -42,7 +42,8 @@ POLICY_SECTIONS: list[PolicySection] = [
     PolicySection(
         id="horarios",
         title="Horário de Funcionamento",
-        keywords=["horario", "aberto", "fecha", "funcionamento", "sabado", "domingo", "feriado"],
+        keywords=["horario", "aberto", "fecha", "funcionamento", "sabado", "domingo", "feriado",
+                  "abrir", "abre", "fechar", "atende"],
         text=(
             "Segunda a sexta-feira: 09:00 às 18:00. Sábado: 09:00 às 13:00. "
             "Domingo e feriados: fechado. O WhatsApp segue o mesmo horário, com respostas "
@@ -53,7 +54,8 @@ POLICY_SECTIONS: list[PolicySection] = [
     PolicySection(
         id="pagamentos",
         title="Formas de Pagamento",
-        keywords=["pagamento", "pix", "cartao", "credito", "debito", "boleto", "parcela", "desconto"],
+        keywords=["pagamento", "pix", "cartao", "credito", "debito", "boleto", "parcela", "desconto",
+                  "pagar", "parcelar", "juros", "vista"],
         text=(
             "PIX: à vista com 5% de desconto sobre o preço de tabela. Cartão de débito: à vista, "
             "todas as bandeiras. Cartão de crédito: até 12x sem juros, parcela mínima de R$ 100,00. "
@@ -65,7 +67,8 @@ POLICY_SECTIONS: list[PolicySection] = [
     PolicySection(
         id="trocas_devolucoes",
         title="Trocas e Devoluções",
-        keywords=["troca", "devolucao", "arrependimento", "defeito", "reembolso", "prazo", "defeituoso"],
+        keywords=["troca", "devolucao", "arrependimento", "defeito", "reembolso", "prazo", "defeituoso",
+                  "trocar", "devolver", "reembolsar"],
         text=(
             "Arrependimento (compras online): devolução em até 7 dias corridos após o recebimento, "
             "sem justificativa, produto na embalagem original sem sinais de uso; reembolso na mesma "
@@ -80,7 +83,8 @@ POLICY_SECTIONS: list[PolicySection] = [
     PolicySection(
         id="frete_entregas",
         title="Frete e Entregas",
-        keywords=["frete", "entrega", "prazo", "rastreamento", "rastreio", "correios", "jadlog", "pac", "sedex", "envio"],
+        keywords=["frete", "entrega", "prazo", "rastreamento", "rastreio", "correios", "jadlog", "pac", "sedex", "envio",
+                  "enviar", "entregar", "rastrear", "gratis", "taxa"],
         text=(
             "Campo Grande e região: frete GRÁTIS acima de R$ 500,00; abaixo disso taxa fixa de "
             "R$ 35,00; prazo 1 a 3 dias úteis, entrega por motoboy próprio (cliente é contactado "
@@ -123,7 +127,8 @@ POLICY_SECTIONS: list[PolicySection] = [
     PolicySection(
         id="garantia",
         title="Garantia",
-        keywords=["garantia", "defeito", "fabricante", "cobertura", "assistência", "prazo"],
+        keywords=["garantia", "defeito", "fabricante", "cobertura", "assistência", "prazo",
+                  "garantir", "conserto"],
         text=(
             "Garantia legal: 90 dias contra defeitos de fabricação, da data de recebimento (CDC). "
             "Garantia do fabricante: 6 meses a 2 anos conforme certificado que acompanha o produto. "
@@ -134,7 +139,8 @@ POLICY_SECTIONS: list[PolicySection] = [
     PolicySection(
         id="privacidade",
         title="Privacidade e Proteção de Dados",
-        keywords=["privacidade", "lgpd", "dados", "pessoais", "exclusao", "consentimento"],
+        keywords=["privacidade", "lgpd", "dados", "pessoais", "exclusao", "consentimento",
+                  "apagar", "excluir"],
         text=(
             "Conformidade com a LGPD (Lei nº 13.709/2018). Dados (nome, telefone, e-mail, endereço) "
             "usados só para: processar e entregar pedidos, comunicar status/rastreamento, enviar "
