@@ -229,6 +229,15 @@
   innocent twice over — the user's earlier 2-of-6 + "sorry, none found" was run-varying
   messenger wobble (incident-#5 family: apology text generated before reading results),
   not a recall bug. No code changed.
+- Red-team win (Nov 1, user's freestyle): "Memph" (invented brand) → qwen never called a tool
+  and hallucinated entire product lines (Memph/Memphis VJ-200/300/400, Tagima VJ-100...), with
+  invented prices AND model arithmetic — plus a Chinese pretraining leak mid-confusion. Same
+  disease as #7: no tool call on ill-formed queries. Fix: prompt rule (search-first, broad
+  before giving up, few-shot redirect, never present unlisted products). Verified 2x live:
+  run 1 honest-empty (no invention) but category-narrow miss exposed by the tool log
+  (`category=guitarras` → []); strengthened rule ("busque amplo"); run 2 textbook:
+  clarify → broad search → fuzzy redirect to the real Tagima Memphis (R$429,90 / PIX R$408,40).
+  Lesson: the tool log doesn't just diagnose — it aims the next fix.
 - Phase 8 DONE (Nov 1): coverage 78% → 100% (554 stmts, 0 missed), suite 56 → 85, all
   hermetic (mocked `urlopen`, no network). New: `test_config.py` (defaults/env/cache),
   loader empty-table, `price_block` both branches, full Ollama+OpenAI client tests
