@@ -238,6 +238,11 @@
   (`category=guitarras` → []); strengthened rule ("busque amplo"); run 2 textbook:
   clarify → broad search → fuzzy redirect to the real Tagima Memphis (R$429,90 / PIX R$408,40).
   Lesson: the tool log doesn't just diagnose — it aims the next fix.
+- Re-probes (Nov 1, qwen, post-rule): #6 troca now concludes 10 > 7 correctly (window closed,
+  alternatives offered, no tool needed — pure policy reasoning); #7 pedido 8 now calls
+  `get_order_status {order_id: 8}` and answers textbook (name greeting, tracking code, date).
+  Both graded-script failures were run-varying one-offs, not stable bugs. The search-first
+  rule may have cured #7 as a side effect — unproven, recorded as hypothesis, not claim.
 - Phase 8 DONE (Nov 1): coverage 78% → 100% (554 stmts, 0 missed), suite 56 → 85, all
   hermetic (mocked `urlopen`, no network). New: `test_config.py` (defaults/env/cache),
   loader empty-table, `price_block` both branches, full Ollama+OpenAI client tests
