@@ -76,12 +76,14 @@ class OpenAIClient:
         api_key: str | None,
         model: str = "gpt-4o-mini",
         base_url: str = DEFAULT_BASE_URL,
+        temperature: float = 0.2,
     ) -> None:
         if not api_key:
             raise LLMError("OpenAI API key is missing (EMPORIO_OPENAI_API_KEY).")
         self.api_key = api_key
         self.model = model
         self.base_url = base_url.rstrip("/")
+        self.temperature = temperature
 
     def chat(
         self,
@@ -92,6 +94,7 @@ class OpenAIClient:
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": [_to_openai_message(message) for message in messages],
+            "temperature": self.temperature,
         }
         if tools:
             payload["tools"] = [tool.to_openai_schema() for tool in tools]

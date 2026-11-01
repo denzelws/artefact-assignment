@@ -34,5 +34,9 @@ def get_chat_model(settings: object | None = None) -> ChatModel:
 
     resolved: Settings = settings if isinstance(settings, Settings) else get_settings()
     if resolved.model_provider == "openai":
-        return OpenAIClient(api_key=resolved.openai_api_key, model=resolved.openai_model)
-    return OllamaClient(host=resolved.ollama_host, model=resolved.ollama_model)
+        return OpenAIClient(
+            api_key=resolved.openai_api_key,
+            model=resolved.openai_model,
+            temperature=resolved.temperature,
+        )
+    return OllamaClient(host=resolved.ollama_host, model=resolved.ollama_model, temperature=resolved.temperature)

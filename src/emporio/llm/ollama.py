@@ -55,9 +55,12 @@ def _parse_tool_calls(raw_calls: Any) -> list[ToolCallRequest]:
 class OllamaClient:
     """Sync client for Ollama's ``/api/chat`` endpoint with tool calling."""
 
-    def __init__(self, host: str = "http://localhost:11434", model: str = "llama3.1:8b") -> None:
+    def __init__(
+        self, host: str = "http://localhost:11434", model: str = "llama3.1:8b", temperature: float = 0.2
+    ) -> None:
         self.host = host.rstrip("/")
         self.model = model
+        self.temperature = temperature
 
     def chat(
         self,
@@ -69,6 +72,7 @@ class OllamaClient:
             "model": self.model,
             "messages": [_to_ollama_message(message) for message in messages],
             "stream": False,
+            "options": {"temperature": self.temperature},
         }
         if tools:
             payload["tools"] = [tool.to_openai_schema() for tool in tools]

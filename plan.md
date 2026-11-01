@@ -151,6 +151,18 @@
   clarification instead. Not fixable in code; the loop is correct and bigger models are
   consistent. Distinguish from recall bugs: flakiness varies run to run, recall fails
   deterministically.
+- Full-fabrication event (live CLI, 3b): "violões até R$1000" returned generic invented
+  products ("Violão Acústico R$249,90" — nothing in the catalog) plus an invented R$500
+  cap. X-ray minutes later on the identical question: correct tool call, 14 real results,
+  grounded answer. Verdict: incident-#5 class (no-call flakiness), not a new recall bug —
+  no code changed. Open hypothesis (unproven): prompt growth (~30→60 lines across tonight's
+  fixes) competes with tool schemas for 3b attention; candidate Phase 8/9 work is a prompt
+  condense pass keeping all rules. Graded runs stay on 7b+.
+- Typo probe (live CLI, deliberate "desconto no pi?"): understanding 10/10 — "pi" resolved
+  to PIX, correctly scoped to the Woodstock thread. But the answer repeated incident #6
+  (no 5% stated) and added a scope regression: offered "acessórios" as alternatives, a
+  context the incident-#4 few-shot doesn't cover. Fix: ESCOPO now bans offering
+  accessories as alternatives/suggestions too, not just listing them as products.
 - Incident #6 (PIX, closed): 3b is 0-for-4 with four DISTINCT wrong variants (denial,
   promo-listing dodge, and finally the inverted rule "PIX apenas para produtos COM
   desconto" — backwards and dangerous). A PIX few-shot (same treatment that fixed #4)
@@ -159,6 +171,19 @@
   by capacity. The architecture already contains the answer: `pix_eligible`/`pix_price`
   are computed in tools, so per-product PIX numbers are always correct; only the
   general-rule statement needs model capacity.
+  Re-probe Nov 1 at temperature=0.2: 1/3 correct, 2/3 denial variant — notable: the tool
+  (`get_promotions`) was called 3/3, only the prose conclusion flips. Temperature fixed
+  tool-call consistency, not conditional reasoning. Verdict STANDS: graded runs on 7b.
+- Incident #7 (live CLI): user said just "Tagima" (2 matches: Memphis, Dallas Tuner) and
+  the model detailed one silently instead of listing both + asking. Road delivered both;
+  messenger chose without asking. Fix: prompt rule in the flow (vague query -> shortlist
+  with prices -> ask before detailing). User's preferred UX confirmed: both + select.
+- Incident #8 (live CLI): follow-up "Tagima" after "violões até R$1000" listed ALL Tagimas
+  (up to R$1349), dropping the established budget. Tools are stateless by design; carrying
+  conversation filters is the messenger's job. Fix: prompt rule (refinements inherit prior
+  filters unless changed). VERIFIED live Oct 31: follow-up "Tagima" returned 4/4 in-budget
+  Tagimas (R$429–R$999, no R$1199/R$1349) + asked which — both halves of follow-up behavior
+  now hold (#7 ask-when-vague, #8 remember-when-refining).
 - Human QA verdicts (user-run `scripts/live_qa.py`): troca consistently correct
   (WhatsApp, 7/30/90 clocks); pedido 8 correct whenever the tool is called; violões
   10/10 real post-fixes (minus one listed-discontinued, fixed by prompt). Bottom line
@@ -186,3 +211,21 @@
   prose mean messenger training (few-shot examples beat rules); run-varying failures
   with a proven road mean model capacity (bigger model). This layering is the
   README spine and the reason small-model prose wobble never corrupts facts.
+- Temperature fix (Oct 31, closes the incident-#5 class on the common case): run-varying
+  no-call flakiness on llama3.2:3b ("quais violões vocês têm?" answered directly, no tool,
+  ~1 in 3 runs) was sampling noise, not prompt wording — default temperature=1.0 lets a
+  weak "always call a tool" intent flip run to run on 3b. Fix: new `temperature` setting
+  (`LLM_TEMPERATURE`, default 0.2; Ollama `options.temperature`, OpenAI `temperature=`),
+  tests on both clients + factory passthrough. Verification: same question on 3b → tool
+  called 3/3 (was ~2/3). Suite: 54 passed. Lesson (README-worthy): set determinism knobs
+  BEFORE judging a small model — sampling noise < model size.
+- CLI observability gap (Nov 1, from live QA): `sessions.jsonl` logged only user/assistant
+  text, so a Tagima turn ("sorry, none found" + 2-of-6 list) couldn't be X-rayed — the
+  road's actual output was unknown. Fix: `Agent.last_tool_calls` (reset per turn) now
+  flows into each JSONL record under `"tools"` (suite: 56). Lesson: log the road, not
+  just the conversation — undiagnosable turns are a logging bug, not a model mystery.
+  First X-ray (Nov 1): reproduced "violões → Tagima" on 3b via piped CLI; log shows
+  `search_products {category: violoes, query: Tagima}` → 6 results, all 6 listed. Road
+  innocent twice over — the user's earlier 2-of-6 + "sorry, none found" was run-varying
+  messenger wobble (incident-#5 family: apology text generated before reading results),
+  not a recall bug. No code changed.

@@ -94,3 +94,24 @@ def test_unknown_tool_error_feeds_back(agent_connection: sqlite3.Connection) -> 
         next(message for message in agent.history if message.role == "tool").content or "{}"
     )
     assert payload["ok"] is False
+
+
+def test_last_tool_calls_records_turn_and_resets(agent_connection: sqlite3.Connection) -> None:
+    model = FakeModel(
+        [
+            _tool_call("search_products", {"category": "ukuleles", "limit": 2}),
+            ChatResponse(content="Achei!"),
+            ChatResponse(content="De nada!"),
+        ]
+    )
+    agent = Agent(model, agent_connection)
+    assert agent.last_tool_calls == []
+    agent.reply("quero um ukulele")
+    assert len(agent.last_tool_calls) == 1
+    entry = agent.last_tool_calls[0]
+    assert entry["tool"] == "search_products"
+    assert entry["arguments"] == {"category": "ukuleles", "limit": 2}
+    assert json.loads(entry["result"])["ok"] is True
+    # Next turn answers directly: record resets, no stale calls leak across turns.
+    agent.reply("obrigado")
+    assert agent.last_tool_calls == []

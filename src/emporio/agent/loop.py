@@ -6,6 +6,7 @@ and a runaway tool-calling streak ends in a polite Portuguese fallback.
 """
 
 import sqlite3
+from typing import Any
 
 from emporio.llm.base import ChatMessage, ChatModel
 from emporio.tools import execute_tool, get_tool_definitions
@@ -32,10 +33,14 @@ class Agent:
         self.connection = connection
         self.max_tool_steps = max_tool_steps
         self.history: list[ChatMessage] = [ChatMessage(role="system", content=system_prompt)]
+        # Tool calls executed during the most recent reply(): {"tool", "arguments", "result"}.
+        # Reset every turn; the CLI logs it so live sessions stay X-rayable.
+        self.last_tool_calls: list[dict[str, Any]] = []
 
     def reply(self, user_text: str) -> str:
         """Handle one user message through the tool loop; return the final text."""
         self.history.append(ChatMessage(role="user", content=user_text))
+        self.last_tool_calls = []
         definitions = get_tool_definitions()
         for _ in range(self.max_tool_steps):
             response = self.model.chat(self.history, definitions)
@@ -46,6 +51,9 @@ class Agent:
                 return response.content or ""
             for call in response.tool_calls:
                 output = execute_tool(call.name, self.connection, call.arguments)
+                self.last_tool_calls.append(
+                    {"tool": call.name, "arguments": call.arguments, "result": output}
+                )
                 self.history.append(
                     ChatMessage(role="tool", content=output, tool_call_id=call.id)
                 )

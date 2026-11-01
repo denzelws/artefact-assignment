@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     openai_api_key: str | None = Field(default=None)
     openai_model: str = "gpt-4o-mini"
 
+    # Sampling temperature for both providers. Low default: a store agent should be
+    # boring — same question, same answer — and steady sampling keeps tool-calling
+    # reliable. Override per deployment with EMPORIO_TEMPERATURE.
+    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+
     # Local data and runtime paths.
     data_dir: str = "data"
     database_path: str = "emporio.sqlite"
