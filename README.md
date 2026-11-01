@@ -1,4 +1,4 @@
-# Emporio da Musica — Text-Message Store Agent
+# 🎼 Emporio da Musica — Text-Message Store Agent
 
 Text-message agent (CLI) that assists the team of Emporio da Musica (fictional
 music-instrument store, Campo Grande/MS) by answering customers in Portuguese: catalog
