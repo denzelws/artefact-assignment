@@ -66,3 +66,23 @@ def test_foreign_keys_enforced(db_path: Path) -> None:
             )
     finally:
         connection.close()
+
+
+def test_empty_tables_load_as_zero(db_path: Path, tmp_path: Path) -> None:
+    from emporio.data.loader import FILENAMES
+
+    headers = {
+        "categories": "category_id,name,description",
+        "customers": "customer_id,name,phone,email,city",
+        "order_items": "order_id,quantity,product_id",
+        "orders": "order_id,customer_id,order_date,status,total_brl,"
+        "payment_method,tracking_code,estimated_delivery,notes",
+        "products": "product_id,price_brl,name,category_id,description,"
+        "stock_quantity,status,specs,created_at",
+        "promotions": "promotion_id,product_id,discount_percent,description,is_active",
+    }
+    data_dir = tmp_path / "empty_data"
+    data_dir.mkdir()
+    for table, filename in FILENAMES.items():
+        (data_dir / filename).write_text(headers[table] + "\n", encoding="utf-8")
+    assert load_database(db_path, str(data_dir)) == dict.fromkeys(FILENAMES, 0)

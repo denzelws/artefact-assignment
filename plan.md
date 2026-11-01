@@ -229,3 +229,16 @@
   innocent twice over — the user's earlier 2-of-6 + "sorry, none found" was run-varying
   messenger wobble (incident-#5 family: apology text generated before reading results),
   not a recall bug. No code changed.
+- Phase 8 DONE (Nov 1): coverage 78% → 100% (554 stmts, 0 missed), suite 56 → 85, all
+  hermetic (mocked `urlopen`, no network). New: `test_config.py` (defaults/env/cache),
+  loader empty-table, `price_block` both branches, full Ollama+OpenAI client tests
+  (payloads, headers, tool-call parsing, every error branch), CLI `build_agent` +
+  scripted REPL (turn logging, EOF/blank/LLMError paths). Coverage tooling lives outside
+  the venv (`pytest-cov` can't install into the sandboxed venv): user re-runs with a
+  normal `pip install pytest-cov` + `python -m pytest tests/ --cov=emporio --cov-report=term-missing`.
+  Postscript (user's strict run caught it): suite now warning-clean under `-W error` too.
+  That hunt found a REAL product bug — `load_database` never closed its connection
+  (`sqlite3` context managers commit but don't close), leaking one fd per load; fixed
+  with `contextlib.closing` + explicit `commit` (closing alone silently rolls back —
+  verified by 14 red tests before the commit line went in). Lesson: treat warnings as
+  errors and the suite debugs your product code.

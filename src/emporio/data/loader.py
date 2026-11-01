@@ -9,6 +9,7 @@ Idempotent: every load drops and recreates the tables inside one transaction.
 
 import csv
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 # Exact provided filenames (plan section 2: do not rename).
@@ -138,7 +139,7 @@ def load_database(
     # Drops run child-first so FK enforcement never blocks a reload;
     # inserts run parent-first so FK references always exist.
     drop_order = list(reversed(load_order))
-    with connect(db_path) as connection:
+    with closing(connect(db_path)) as connection:
         connection.execute("PRAGMA foreign_keys = OFF")
         connection.executescript(
             "\n".join(f"DROP TABLE IF EXISTS {table};" for table in drop_order) + "\n" + SCHEMA
@@ -156,4 +157,5 @@ def load_database(
                 [[row[column] for column in columns] for row in rows],
             )
             counts[table] = len(rows)
+        connection.commit()
     return counts

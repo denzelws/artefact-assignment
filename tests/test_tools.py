@@ -163,3 +163,34 @@ def test_execute_tool_json_envelope(connection: sqlite3.Connection) -> None:
     assert json.loads(execute_tool("nope", connection, {}))["ok"] is False
     bad = json.loads(execute_tool("get_product", connection, {"product_id": "abc"}))
     assert bad["ok"] is False
+
+
+def test_price_block_with_active_promo(connection: sqlite3.Connection) -> None:
+    from emporio.tools._pricing import price_block
+
+    row = connection.execute(
+        "SELECT p.product_id, p.price_brl, pr.discount_percent FROM promotions pr "
+        "JOIN products p ON p.product_id = pr.product_id "
+        "WHERE pr.is_active = 1 ORDER BY pr.promotion_id LIMIT 1"
+    ).fetchone()
+    assert row is not None
+    product_id, price, discount = row
+    block = price_block(connection, product_id, price)
+    assert block["promo_price"] == round(price * (1 - discount / 100), 2)
+    assert block["pix_eligible"] is False
+    assert block["pix_price"] is None
+
+
+def test_price_block_without_promo(connection: sqlite3.Connection) -> None:
+    from emporio.tools._pricing import price_block
+
+    row = connection.execute(
+        "SELECT product_id, price_brl FROM products WHERE product_id NOT IN "
+        "(SELECT product_id FROM promotions WHERE is_active = 1) LIMIT 1"
+    ).fetchone()
+    assert row is not None
+    product_id, price = row
+    block = price_block(connection, product_id, price)
+    assert block["promo_price"] is None
+    assert block["pix_eligible"] is True
+    assert block["pix_price"] == round(price * 0.95, 2)
