@@ -114,3 +114,75 @@
 - Process note: pytest suite started early (Phase 4.5, `tests/` for llm/data/policies,
   29 tests) instead of waiting for Phase 8 — scratch `/tmp` smoke scripts graduate into
   `tests/test_*.py` from now on; Phase 8 extends the suite (tools, agent loop).
+- Incident #1 (kept for README): first live turn hallucinated. Asked "quais violões até
+  R$ 1000", the model correctly called `search_products` but got `[]` and invented
+  Yamaha/Taylor/Fender listings. Diagnosis via history X-ray (`/tmp/diag_agent.py`):
+  the model echoed `query: "violões"` (plural) while descriptions say "violão"
+  (singular) — substring match failed on every row. Fix: 10-line PT `stem()`
+  (`violoes->violao`, `trocas->troca`, short words untouched) applied to product
+  search and policy ranking, with regression tests pinning the exact model call.
+  Re-run quoted 8 real violões at real prices. Lesson recorded: empty tool results
+  push small models to invent, so recall robustness IS hallucination prevention.
+- Incident #2 (same session): the model's natural query `query="violões até R$ 1000"`
+  still returned `[]` AFTER the stem fix. Cause: every token was required, and residue
+  tokens (`até`, `R$`->`r`, `1000`) appear in no description — prices belong to
+  `max_price`, not to text. Fix: shared `data/text.py`
+  (`normalize`/`stem`/`STOPWORDS`/`query_tokens`/`word_set`) used by both product search
+  and policy ranking; `query_tokens` drops stopwords, single letters and pure numbers.
+  Regression test pins the exact model query. Same session added a prompt rule from live
+  observation ("viiol" typo on llama3.2:3b): copy names/prices/codes verbatim, never
+  rewrite. Verification: qwen2.5:7b answered with 5 real violões, real prices and correct
+  PIX math (R$429,90 -> R$408,40); residual prose wobble on 3b is capacity, not code.
+- Incident #3 (user re-run caught it): `category="violão"` (singular, the natural word)
+  returned 0 rows while `"violões"` returned 14 — category matching never got the stem.
+  Same fix shape as #1/#2 (stem both sides of the name comparison). Pattern recorded:
+  the model varies wording run to run, so EVERY text comparison in the tools must be
+  number/accent/case-proof, not just the query field.
+- Incident #4 (user's own MY_QUESTIONS case): "a loja vende oq?" -> 3b answered the store
+  ALSO sells accessories (cordas, palhetas, cabos...) — a confident inversion of manual
+  §1, answered from pretraining without calling any tool. Qwen-7b also failed ("diversos
+  acessórios"), so NOT 3b-only: rules alone don't beat prior when no tool is consulted.
+  Fix: few-shot example inside ESCOPO (model customer "vocês vendem cordas?" + redirect
+  to imitate) instead of another rule. Verified on 3b: accessories gone. Lesson: for
+  scope/safety behavior, examples beat instructions. Prime Phase 9 non-trivial sample.
+- Incident #5 (same re-run): "pedido 8" said not-found while the X-ray proves the road
+  is perfect (`get_order_status {order_id: 8}` -> found/shipped/all facts). Pure 3b
+  messenger flakiness: identical question, some runs call the tool, some ask for
+  clarification instead. Not fixable in code; the loop is correct and bigger models are
+  consistent. Distinguish from recall bugs: flakiness varies run to run, recall fails
+  deterministically.
+- Incident #6 (PIX, closed): 3b is 0-for-4 with four DISTINCT wrong variants (denial,
+  promo-listing dodge, and finally the inverted rule "PIX apenas para produtos COM
+  desconto" — backwards and dangerous). A PIX few-shot (same treatment that fixed #4)
+  did not help. Qwen states the rule correctly every time. Verdict: conditional rules
+  (X unless Y) exceed 3b reliability — unsolvable by prompt on small models, solvable
+  by capacity. The architecture already contains the answer: `pix_eligible`/`pix_price`
+  are computed in tools, so per-product PIX numbers are always correct; only the
+  general-rule statement needs model capacity.
+- Human QA verdicts (user-run `scripts/live_qa.py`): troca consistently correct
+  (WhatsApp, 7/30/90 clocks); pedido 8 correct whenever the tool is called; violões
+  10/10 real post-fixes (minus one listed-discontinued, fixed by prompt). Bottom line
+  for the README: no invented products, prices or tracking codes in any grounded turn —
+  tool grounding holds, prose wobble is model size.
+- Model benchmarking (early numbers for the README performance section, Oct 31 2026,
+  user's machine): qwen2.5:7b cold load takes minutes (5.1 GB resident, 100% CPU while
+  inferring, 4K context, 4-min Ollama keep-alive — warm runs within the window are fast);
+  per-turn latency several times llama3.2:3b. Quality ranking from live QA: qwen holds
+  PIX rule + scope + grounding; 3b needs prompt scaffolding and still drops conditionals.
+  Plan default llama3.1:8b not yet measured locally. Demo tip: pre-warm with
+  `ollama run <model>` before presenting.
+- Decision (trade-off, kept for README): single model per deployment, NO per-question
+  routing. Considered a cascade (3b default, escalate conditional-rule questions to 7b)
+  and rejected: two resident models cost more RAM/VRAM than one 7b; the router becomes a
+  new failure point to debug 3 days before the deadline; and the evidence shows 7b
+  handles every category while 3b fumbles across them. Flexibility lives in one env var
+  (`EMPORIO_OLLAMA_MODEL`), and per-product PIX numbers are model-proof anyway (computed
+  in tools). Revisit only with latency/cost telemetry demanding it.
+- Guiding principle (earned from incidents #1–#6): the agent is a messenger, not the
+  truth. Truth lives in SQLite rows + 10 policy sections; tools are the only road
+  between truth and messenger; the model supplies tone and flow. Every wrong answer is
+  diagnosed with one question — "road or messenger?" — via the history X-ray: empty or
+  wrong tool results mean road repair (with regression tests); correct results with bad
+  prose mean messenger training (few-shot examples beat rules); run-varying failures
+  with a proven road mean model capacity (bigger model). This layering is the
+  README spine and the reason small-model prose wobble never corrupts facts.
