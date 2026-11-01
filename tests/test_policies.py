@@ -29,6 +29,7 @@ def test_ten_sections() -> None:
         ("12x sem juros", "pagamentos"),
         ("lgpd quero apagar meus dados", "privacidade"),
         ("reclamacao", "atendimento_whatsapp"),  # no tilde
+        ("trocas", "trocas_devolucoes"),  # plural matches singular
     ],
 )
 def test_mangled_queries_rank_first(query: str, expected_top1: str) -> None:

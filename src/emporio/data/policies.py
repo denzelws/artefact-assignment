@@ -9,10 +9,9 @@ so ``devolucao`` matches ``devolução``) and falls back to the section
 index when nothing matches, per the plan.
 """
 
-import re
-import unicodedata
-
 from pydantic import BaseModel, Field
+
+from .text import query_tokens, word_set
 
 
 class PolicySection(BaseModel):
@@ -162,30 +161,6 @@ POLICY_SECTIONS: list[PolicySection] = [
 ]
 
 
-def _normalize(text: str) -> str:
-    """Lowercase and strip accents for Portuguese-tolerant matching."""
-    return "".join(
-        char for char in unicodedata.normalize("NFD", text.lower()) if unicodedata.category(char) != "Mn"
-    )
-
-
-# Common Portuguese stopwords: ignored as query tokens so short words
-# (``o``, ``de``, ``qual``) never outscore real content terms.
-_STOPWORDS = frozenset(
-    "a ao aos aquela aquelas aquele aqueles aquilo as ate com como da das de do dos "
-    "e em entre era eram esse essa esses essas este esta estes estas eu ele ela eles elas "
-    "foi foram ha isso isto ja lhe lhes mas me meu minha meus minhas muito na nao nas nem "
-    "no nos nosso nossa nossos nossas nunca o os ou para pela pelas pelo pelos por qual quais "
-    "quando que quem se sem ser seu sua seus suas sob sobre sua suas tambem te tem tenho teu "
-    "tua tuas um uma uns umas voce voces vos".split()
-)
-
-
-def _words(text: str) -> set[str]:
-    """Split normalized text into a set of whole words (no punctuation)."""
-    return set(re.findall(r"[a-z0-9]+", _normalize(text)))
-
-
 def list_sections() -> list[dict[str, str]]:
     """Return the section index (id + title), used as the search fallback."""
     return [{"id": section.id, "title": section.title} for section in POLICY_SECTIONS]
@@ -194,21 +169,21 @@ def list_sections() -> list[dict[str, str]]:
 def search_policies(query: str, limit: int = 3) -> list[PolicySection]:
     """Rank sections by keyword/text overlap; fall back to all sections.
 
-    Whole-word, accent-insensitive matching with Portuguese stopwords
-    removed. Scoring: a query token in the title counts 3, in keywords
-    2, in text 1. Empty queries or zero scores return the full section
+    Whole-word, accent-insensitive matching: stopwords, single letters and pure
+    numbers never become tokens. Scoring: a query token in the title counts 3,
+    in keywords 2, in text 1. Empty queries or zero scores return the full section
     list so the caller (tool/agent) can present the index instead of
     nothing.
     """
-    tokens = [token for token in _words(query) - _STOPWORDS if token]
+    tokens = query_tokens(query)
     if not tokens:
         return list(POLICY_SECTIONS)
 
     scored: list[tuple[int, PolicySection]] = []
     for section in POLICY_SECTIONS:
-        title = _words(section.title)
-        keywords = _words(" ".join(section.keywords))
-        text = _words(section.text)
+        title = word_set(section.title)
+        keywords = word_set(" ".join(section.keywords))
+        text = word_set(section.text)
         score = sum(
             (3 if token in title else 0) + (2 if token in keywords else 0) + (1 if token in text else 0)
             for token in tokens

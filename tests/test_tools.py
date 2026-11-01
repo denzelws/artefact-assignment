@@ -46,13 +46,38 @@ def test_violoes_under_1000(connection: sqlite3.Connection) -> None:
     assert all(item.category == "Violões" and item.price_brl <= 1000 for item in results)
 
 
+def test_redundant_plural_query_word_still_matches(connection: sqlite3.Connection) -> None:
+    from emporio.tools import search_products
+
+    results = search_products.run(
+        connection,
+        search_products.SearchProductsArgs(
+            category="violoes", max_price=1000, query="violões", limit=50
+        ),
+    )
+    assert len(results) == 14
+
+
+def test_conversational_query_with_price_words_still_matches(connection: sqlite3.Connection) -> None:
+    from emporio.tools import search_products
+
+    results = search_products.run(
+        connection,
+        search_products.SearchProductsArgs(
+            category="violoes", max_price=1000, query="violões até R$ 1000", limit=50
+        ),
+    )
+    assert len(results) == 14
+
+
 def test_category_matches_without_accent(connection: sqlite3.Connection) -> None:
     from emporio.tools import search_products
 
     accented = search_products.run(connection, search_products.SearchProductsArgs(category="violões"))
     plain = search_products.run(connection, search_products.SearchProductsArgs(category="violoes"))
     by_id = search_products.run(connection, search_products.SearchProductsArgs(category="5"))
-    assert len(accented) == len(plain) == len(by_id) > 0
+    singular = search_products.run(connection, search_products.SearchProductsArgs(category="violão"))
+    assert len(accented) == len(plain) == len(by_id) == len(singular) > 0
     assert search_products.run(connection, search_products.SearchProductsArgs(category="nope")) == []
 
 

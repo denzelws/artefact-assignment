@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from emporio.llm.base import ToolDefinition
 
 from ._pricing import price_block
-from ._text import normalize
+from ._text import normalize, query_tokens, stem
 
 
 class SearchProductsArgs(BaseModel):
@@ -54,7 +54,7 @@ def _resolve_category(connection: sqlite3.Connection, category: str) -> int | No
         ).fetchone()
         return int(row[0]) if row else -1
     for category_id, name in connection.execute("SELECT category_id, name FROM categories"):
-        if normalize(str(name)) == wanted:
+        if stem(normalize(str(name))) == stem(wanted):
             return int(category_id)
     return -1
 
@@ -83,7 +83,7 @@ def run(connection: sqlite3.Connection, args: SearchProductsArgs) -> list[Produc
         params,
     ).fetchall()
 
-    tokens = [token for token in normalize(args.query).split() if token]
+    tokens = query_tokens(args.query)
     summaries: list[ProductSummary] = []
     for product_id, name, price, category_name, status, stock, description in rows:
         if tokens:
